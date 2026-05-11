@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #fbfcff;
+  color: #020617;
+}
+
+::selection {
+  background: rgba(99, 102, 241, 0.18);
+}
+
+.noise {
+  background-image: radial-gradient(circle at 1px 1px, rgba(15,23,42,0.045) 1px, transparent 0);
+  background-size: 22px 22px;
+}
