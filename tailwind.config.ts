@@ -5,11 +5,22 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"]
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"]
       },
-      boxShadow: {
-        soft: "0 24px 80px rgba(15, 23, 42, 0.10)",
-        glow: "0 28px 80px rgba(99, 102, 241, 0.24)"
+      colors: {
+        border: "rgba(201, 208, 228, 0.50)",
+        "border-strong": "rgba(201, 208, 228, 0.80)",
+        accent: {
+          DEFAULT: "#2563eb",
+          light: "#eff4ff",
+          muted: "#3b82f6"
+        }
+      },
+      borderRadius: {
+        DEFAULT: "0.5rem",
+        lg: "0.625rem",
+        xl: "0.75rem",
+        "2xl": "1rem"
       }
     }
   },
