@@ -317,24 +317,65 @@ function HowSection() {
 /* ══════════════════════════════════════
    DASHBOARD
    ══════════════════════════════════════ */
+// API scan result type
+type ScanResult = {
+  keyword: string;
+  score: { total: number; demand: number; trend: number; competition: number; intent: number; label: string; demandLabel: string; trendLabel: string; competitionLabel: string; summary: string };
+  autocomplete: { suggestions: string[]; count: number; commercialIntent: boolean; intentSignals: string[] };
+  trend: { direction: string; currentInterest: number; averageInterest: number; growthPercent: number; timeline: { date: string; value: number }[]; relatedQueries: string[] };
+  expandedKeywords: string[];
+  scannedAt: string;
+} | null;
+
 function Dashboard() {
   const [q, setQ] = useState("");
   const [result, setResult] = useState(() => doSearch(""));
   const [scanCount, setScanCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [liveResult, setLiveResult] = useState<ScanResult>(null);
+  const [scanError, setScanError] = useState("");
 
-  function submit(raw: string) {
-    const r = doSearch(raw);
-    setResult(r);
-    setScanCount(c => c + 1);
+  // Demo fallback search
+  function demoSubmit(raw: string) {
+    setResult(doSearch(raw));
+    setLiveResult(null);
+    setScanError("");
   }
-  function onSubmit(e: FormEvent) { e.preventDefault(); submit(q); }
-  function pick(kw: string) { setQ(kw); submit(kw); }
-  function reset() { setQ(""); submit(""); }
 
+  // Real API scan
+  async function realScan(keyword: string) {
+    if (!keyword.trim()) { demoSubmit(""); return; }
+    setLoading(true);
+    setScanError("");
+    try {
+      const res = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keyword })
+      });
+      if (!res.ok) throw new Error("Scan fehlgeschlagen");
+      const data: ScanResult = await res.json();
+      setLiveResult(data);
+      setScanCount(c => c + 1);
+      // Also update demo result for niche cards
+      setResult(doSearch(keyword));
+    } catch {
+      setScanError("Scan fehlgeschlagen. Versuche es erneut.");
+      demoSubmit(keyword);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function onSubmit(e: FormEvent) { e.preventDefault(); realScan(q); }
+  function pick(kw: string) { setQ(kw); realScan(kw); }
+  function reset() { setQ(""); demoSubmit(""); setLiveResult(null); }
+
+  // Use live data if available, otherwise demo data
   const niches = result.niches;
-  const avgDemand = Math.round(niches.reduce((t, n) => t + n.demandVal, 0) / niches.length);
-  const avgComp = Math.round(niches.reduce((t, n) => t + n.compVal, 0) / niches.length);
-  const avgScore = Math.round(niches.reduce((t, n) => t + n.score, 0) / niches.length);
+  const avgDemand = liveResult ? liveResult.score.demand : Math.round(niches.reduce((t, n) => t + n.demandVal, 0) / niches.length);
+  const avgComp = liveResult ? liveResult.score.competition : Math.round(niches.reduce((t, n) => t + n.compVal, 0) / niches.length);
+  const avgScore = liveResult ? liveResult.score.total : Math.round(niches.reduce((t, n) => t + n.score, 0) / niches.length);
 
   return (
     <section id="demo" className="border-t border-gray-200/60">
@@ -393,7 +434,7 @@ function Dashboard() {
                     <IconSearch className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
                     <input value={q} onChange={e => setQ(e.target.value)} placeholder="Nische scannen: z.B. KI Coaching, Hundefutter..." className="h-9 w-full rounded-md border border-gray-200 pl-9 pr-3 text-[13px] outline-none transition placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black" />
                   </div>
-                  <button type="submit" className="h-9 rounded-md bg-black px-4 text-[12px] font-semibold text-white transition hover:bg-gray-800">Scannen</button>
+                  <button type="submit" disabled={loading} className="h-9 rounded-md bg-black px-4 text-[12px] font-semibold text-white transition hover:bg-gray-800 disabled:opacity-50">{loading ? "Scanne..." : "Scannen"}</button>
                 </form>
                 <div className="flex gap-1.5">
                   <button onClick={reset} className="h-9 rounded-md border border-gray-200 px-2.5 text-gray-500 transition hover:bg-gray-50"><IconRefresh className="h-3.5 w-3.5" /></button>
@@ -411,6 +452,21 @@ function Dashboard() {
                 ))}
               </div>
 
+              {/* Loading overlay */}
+              {loading && (
+                <div className="mt-3 flex items-center justify-center rounded-md border border-gray-200 bg-gray-50/50 py-8">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-black" />
+                    <p className="text-[12px] text-gray-500">Scanne echte Daten...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error */}
+              {scanError && (
+                <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">{scanError}</div>
+              )}
+
               {/* Metrics */}
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <div className="rounded-md border border-gray-200 p-3">
@@ -418,7 +474,7 @@ function Dashboard() {
                   <div className="mt-1 flex items-baseline gap-1.5">
                     <span className="text-[24px] font-bold tracking-tight">{avgDemand}</span>
                     <span className="text-[11px] text-gray-400">/100</span>
-                    <span className="ml-auto rounded bg-green-50 px-1 py-0.5 text-[10px] font-semibold text-green-700">↑ {avgDemand >= 85 ? "Hoch" : "Mittel"}</span>
+                    <span className={`ml-auto rounded px-1 py-0.5 text-[10px] font-semibold ${avgDemand >= 75 ? "bg-green-50 text-green-700" : avgDemand >= 45 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-600"}`}>{liveResult ? liveResult.score.demandLabel : avgDemand >= 85 ? "Hoch" : "Mittel"}</span>
                   </div>
                 </div>
                 <div className="rounded-md border border-gray-200 p-3">
@@ -426,7 +482,7 @@ function Dashboard() {
                   <div className="mt-1 flex items-baseline gap-1.5">
                     <span className="text-[24px] font-bold tracking-tight">{avgComp}</span>
                     <span className="text-[11px] text-gray-400">/100</span>
-                    <span className="ml-auto rounded bg-blue-50 px-1 py-0.5 text-[10px] font-semibold text-blue-700">{avgComp <= 25 ? "Niedrig" : "Mittel"}</span>
+                    <span className={`ml-auto rounded px-1 py-0.5 text-[10px] font-semibold ${avgComp >= 70 ? "bg-green-50 text-green-700" : avgComp >= 45 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-600"}`}>{liveResult ? liveResult.score.competitionLabel : avgComp <= 25 ? "Niedrig" : "Mittel"}</span>
                   </div>
                 </div>
                 <div className="rounded-md border border-gray-200 p-3">
@@ -434,16 +490,84 @@ function Dashboard() {
                   <div className="mt-1 flex items-baseline gap-1.5">
                     <span className="text-[24px] font-bold tracking-tight">{avgScore}</span>
                     <span className="text-[11px] text-gray-400">/100</span>
-                    <span className="ml-auto rounded bg-amber-50 px-1 py-0.5 text-[10px] font-semibold text-amber-700">{avgScore >= 85 ? "Stark" : "Solide"}</span>
+                    <span className={`ml-auto rounded px-1 py-0.5 text-[10px] font-semibold ${avgScore >= 80 ? "bg-green-50 text-green-700" : avgScore >= 65 ? "bg-amber-50 text-amber-700" : "bg-gray-100 text-gray-500"}`}>{liveResult ? liveResult.score.label : avgScore >= 85 ? "Stark" : "Solide"}</span>
                   </div>
                 </div>
               </div>
 
+              {/* Live result details */}
+              {liveResult && !loading && (
+                <div className="mt-3 space-y-2">
+                  {/* Summary */}
+                  <div className="rounded-md border border-gray-200 bg-gray-50/50 p-3">
+                    <p className="text-[12px] font-semibold text-gray-700">{liveResult.score.summary}</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">Intent: {liveResult.score.intent}/100</span>
+                      <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">Trend: {liveResult.score.trendLabel}</span>
+                      {liveResult.autocomplete.commercialIntent && <span className="rounded bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">Kaufintent erkannt</span>}
+                    </div>
+                  </div>
+
+                  {/* Trend + Autocomplete row */}
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {/* Trend mini chart */}
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-[11px] font-medium text-gray-400">Google Trends (12 Monate)</p>
+                      <div className="mt-2 flex h-10 items-end gap-[2px]">
+                        {liveResult.trend.timeline.slice(-24).map((point, i) => {
+                          const max = Math.max(...liveResult!.trend.timeline.map(p => p.value), 1);
+                          return <span key={i} className={`flex-1 rounded-sm ${liveResult!.trend.direction === "rising" ? "bg-green-500" : liveResult!.trend.direction === "falling" ? "bg-red-400" : "bg-gray-400"}`} style={{ height: `${Math.max(4, (point.value / max) * 100)}%` }} />;
+                        })}
+                      </div>
+                      <div className="mt-1.5 flex items-center justify-between text-[10px] text-gray-400">
+                        <span>Aktuell: {liveResult.trend.currentInterest}/100</span>
+                        <span>{liveResult.trend.direction === "rising" ? "↑" : liveResult.trend.direction === "falling" ? "↓" : "→"} {liveResult.trend.growthPercent > 0 ? "+" : ""}{liveResult.trend.growthPercent}%</span>
+                      </div>
+                    </div>
+
+                    {/* Autocomplete suggestions */}
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-[11px] font-medium text-gray-400">Autocomplete ({liveResult.autocomplete.count} Vorschläge)</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {liveResult.autocomplete.suggestions.slice(0, 8).map((s, i) => (
+                          <span key={i} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Related queries */}
+                  {liveResult.trend.relatedQueries.length > 0 && (
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-[11px] font-medium text-gray-400">Verwandte Suchanfragen</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {liveResult.trend.relatedQueries.slice(0, 10).map((rq, i) => (
+                          <button key={i} onClick={() => pick(rq)} className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 transition hover:bg-blue-100">{rq}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Expanded keywords */}
+                  {liveResult.expandedKeywords.length > 0 && (
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-[11px] font-medium text-gray-400">Erweiterte Keywords ({liveResult.expandedKeywords.length})</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {liveResult.expandedKeywords.slice(0, 12).map((kw, i) => (
+                          <span key={i} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">{kw}</span>
+                        ))}
+                        {liveResult.expandedKeywords.length > 12 && <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-400">+{liveResult.expandedKeywords.length - 12} mehr</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Results header */}
               <div className="mt-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-[13px] font-semibold">{result.mode === "top" ? "Top Nischen" : result.mode === "filtered" ? `Ergebnisse für „${q}"` : `Generiert für „${q}"`}</h3>
-                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">{niches.length} Treffer</span>
+                  <h3 className="text-[13px] font-semibold">{liveResult ? `Live-Ergebnisse für "${liveResult.keyword}"` : result.mode === "top" ? "Top Nischen" : result.mode === "filtered" ? `Ergebnisse für "${q}"` : `Generiert für "${q}"`}</h3>
+                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">{liveResult ? "LIVE" : `${niches.length} Treffer`}</span>
                 </div>
                 {scanCount > 0 && (
                   <span className="text-[11px] text-gray-400">Du hast {scanCount} Scan{scanCount !== 1 && "s"} gemacht · <span className="font-medium text-black">{Math.max(0, 3 - scanCount)} von 3 Free-Scans übrig</span></span>
@@ -457,7 +581,7 @@ function Dashboard() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <span className="grid h-5 w-5 place-items-center rounded bg-black text-[10px] font-bold text-white">{n.rank}</span>
-                        {n.hot && <span className="rounded bg-red-50 px-1 py-0.5 text-[9px] font-bold text-red-600">🔥 HOT</span>}
+                        {n.hot && <span className="rounded bg-red-50 px-1 py-0.5 text-[9px] font-bold text-red-600">HOT</span>}
                       </div>
                       <button className="text-gray-300 transition hover:text-black"><IconBookmark className="h-3.5 w-3.5" /></button>
                     </div>
