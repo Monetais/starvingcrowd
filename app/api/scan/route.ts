@@ -3,6 +3,7 @@ import { getAutocompleteSuggestions, getExpandedSuggestions } from "@/lib/google
 import { getTrend } from "@/lib/google-trends";
 import { calculateScore } from "@/lib/scoring";
 import { getMultiPlatformData } from "@/lib/multi-autocomplete";
+import { getGoogleResultCount, getWikipediaPresence } from "@/lib/competition";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -21,18 +22,29 @@ export async function POST(req: NextRequest) {
     }
 
     // Run all data fetches in parallel
-    const [autocomplete, expandedSuggestions, trend, platforms] = await Promise.all([
+    const [autocomplete, expandedSuggestions, trend, platforms, googleResults, wikipedia] = await Promise.all([
       getAutocompleteSuggestions(keyword),
       getExpandedSuggestions(keyword),
       getTrend(keyword),
-      getMultiPlatformData(keyword)
+      getMultiPlatformData(keyword),
+      getGoogleResultCount(keyword),
+      getWikipediaPresence(keyword)
     ]);
 
-    // Calculate opportunity score
+    // Calculate opportunity score with REAL competition data
     const score = calculateScore(
       autocomplete,
       expandedSuggestions.length,
-      trend
+      trend,
+      {
+        googleResults,
+        wikipedia: { exists: wikipedia.exists, length: wikipedia.length },
+        amazonCount: platforms.amazon.length,
+        youtubeCount: platforms.youtube.length,
+        redditPosts: platforms.reddit,
+        commercialSignalCount: autocomplete.intentKeywords.length,
+        expandedKeywordCount: expandedSuggestions.length
+      }
     );
 
     // Build response
@@ -57,6 +69,12 @@ export async function POST(req: NextRequest) {
         amazon: platforms.amazon,
         youtube: platforms.youtube,
         reddit: platforms.reddit
+      },
+      competition: {
+        googleResults,
+        wikipedia: wikipedia.exists ? wikipedia.extract : null,
+        level: score.competitionLabel,
+        reasons: score.competitionReasons
       },
       expandedKeywords: expandedSuggestions.slice(0, 20),
       scannedAt: new Date().toISOString()

@@ -41,10 +41,11 @@ function IconWarning(p: { className?: string }) { return <I {...p}><path d="m21.
 /* ── Types ── */
 type ScanResult = {
   keyword: string;
-  score: { total: number; demand: number; trend: number; competition: number; intent: number; label: string; demandLabel: string; trendLabel: string; competitionLabel: string; summary: string };
+  score: { total: number; demand: number; trend: number; competition: number; competitionRaw?: number; intent: number; label: string; demandLabel: string; trendLabel: string; competitionLabel: string; summary: string; competitionReasons?: string[] };
   autocomplete: { suggestions: string[]; count: number; commercialIntent: boolean; intentSignals: string[] };
   trend: { direction: string; currentInterest: number; averageInterest: number; growthPercent: number; timeline: { date: string; value: number }[]; relatedQueries: string[] };
   platforms?: { amazon: string[]; youtube: string[]; reddit: { title: string; subreddit: string; score: number }[] };
+  competition?: { googleResults: number; wikipedia: string | null; level: string; reasons: string[] };
   expandedKeywords: string[];
   scannedAt: string;
 };
@@ -492,6 +493,49 @@ function ScanResultView({ scan, de, onSave, onPlaybook, playbookLoading, onResca
             <span>{de ? "Aktuell" : "Current"}: {r.trend.currentInterest}/100</span>
             <span>{de ? "Durchschnitt" : "Average"}: {r.trend.averageInterest}/100</span>
           </div>
+        </div>
+      )}
+
+      {/* Competition Details */}
+      {scan.result.competition && (
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <IconTarget className="h-4 w-4 text-gray-400" />
+              <p className="text-[13px] font-semibold">{de ? "Konkurrenz-Analyse" : "Competition Analysis"}</p>
+            </div>
+            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+              (r.score.competitionRaw || 0) >= 70 ? "bg-red-100 text-red-700" :
+              (r.score.competitionRaw || 0) >= 40 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
+            }`}>
+              {de ? "Konkurrenz" : "Competition"}: {r.score.competitionLabel}
+            </span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-3">
+              <p className="text-[11px] font-medium text-gray-500 mb-1">Google {de ? "Suchergebnisse" : "Search Results"}</p>
+              <p className="text-[16px] font-bold">
+                {scan.result.competition.googleResults > 0
+                  ? (scan.result.competition.googleResults >= 1_000_000_000 ? `${(scan.result.competition.googleResults / 1_000_000_000).toFixed(1)}B`
+                    : scan.result.competition.googleResults >= 1_000_000 ? `${(scan.result.competition.googleResults / 1_000_000).toFixed(0)}M`
+                    : scan.result.competition.googleResults >= 1_000 ? `${(scan.result.competition.googleResults / 1_000).toFixed(0)}K`
+                    : scan.result.competition.googleResults.toString())
+                  : "N/A"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-3">
+              <p className="text-[11px] font-medium text-gray-500 mb-1">Wikipedia</p>
+              <p className="text-[12px] font-medium">{scan.result.competition.wikipedia ? (de ? "Artikel vorhanden" : "Article exists") : (de ? "Kein Artikel" : "No article")}</p>
+              {scan.result.competition.wikipedia && <p className="mt-1 text-[10px] text-gray-400 line-clamp-2">{scan.result.competition.wikipedia}</p>}
+            </div>
+          </div>
+          {scan.result.competition.reasons.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {scan.result.competition.reasons.map((reason, i) => (
+                <span key={i} className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-[10px] font-medium text-gray-600">{reason}</span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
