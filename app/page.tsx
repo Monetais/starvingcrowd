@@ -54,17 +54,18 @@ const testimonials = [
 ];
 
 const pricingTiers = [
-  { name: "Free", price: "0", period: "", desc: "Zum Testen.", cta: "Kostenlos starten", items: ["3 Scans / Monat", "Basis-Scores", "Community"] },
-  { name: "Builder", price: "29", period: "/mo", desc: "Fur Grunder, die ernst machen.", cta: "Builder werden", featured: true, items: ["Unbegrenzte Scans", "Opportunity-Score + Trends", "Konkurrenz-Analyse", "Export & Reports", "Nischen-Alerts"], seats: "Noch 23 Platze zum Launch-Preis" },
-  { name: "Agency", price: "79", period: "/mo", desc: "Fur Teams & Agenturen.", cta: "Team starten", items: ["Alles aus Builder", "5 Team-Seats", "API-Zugang", "White-Label Reports"] }
+  { name: "Free", price: "0", period: "", desc: "Teste ob es fur dich passt.", cta: "Kostenlos starten", items: ["3 Scans / Monat", "Basis-Score", "Autocomplete-Daten", "Community-Zugang"] },
+  { name: "Builder", price: "29", period: "/mo", desc: "Fur Grunder, die diese Woche starten.", cta: "Jetzt Builder werden", featured: true, items: ["Unbegrenzte Scans", "Vollstandiger Opportunity-Score", "Google Trends + Konkurrenz", "Export als PDF/CSV", "Nischen-Alerts per E-Mail", "Prioritats-Support"], seats: "Noch 19 Platze zum Launch-Preis", annual: "oder 19 EUR/mo bei Jahreszahlung" },
+  { name: "Agency", price: "79", period: "/mo", desc: "Fur Teams die Kunden beraten.", cta: "Team starten", items: ["Alles aus Builder", "5 Team-Seats", "White-Label Reports", "API-Zugang", "Kunden-Dashboard"] }
 ];
 
 const faqItems: [string, string][] = [
-  ["Was genau ist Kaching OS?", "Ein Nischen-Intelligence-System. Es zeigt dir mit echten Google-Daten, wo Nachfrage existiert — damit du Businesses baust, die von Tag 1 Kunden haben."],
-  ["Woher kommen die Daten?", "Direkt von Google: Autocomplete-Vorschlage zeigen echte Suchnachfrage, Google Trends zeigt die Richtung. Keine simulierten Daten."],
-  ["Brauche ich technische Kenntnisse?", "Nein. Kaching OS sagt dir WAS du bauen sollst. Das WIE machst du mit Shopify, Lovable oder WordPress."],
-  ["Gibt es eine Geld-zuruck-Garantie?", "14 Tage, keine Fragen. Wenn dir Kaching OS keine profitable Nische zeigt, Geld zuruck."],
-  ["Wie unterscheidet sich das von Google Trends?", "Google Trends zeigt dir EINEN Datenpunkt. Kaching OS kombiniert Autocomplete, Trends, Konkurrenz und Kaufintent zu einem Opportunity-Score — und sagt dir, ob die Nische sich lohnt."]
+  ["Kann ich das nicht einfach selbst googeln?", "Klar — das dauert pro Nische 2-3 Stunden. Kaching OS macht das in 30 Sekunden und kombiniert 4 Datenquellen zu einem Score. Die Frage ist: Willst du 10 Nischen manuell recherchieren oder in 5 Minuten die beste finden?"],
+  ["Woher kommen die Daten?", "Direkt von Google: Autocomplete zeigt echte Suchnachfrage (was Menschen JETZT tippen), Google Trends zeigt ob die Nachfrage steigt oder faellt. Keine erfundenen Zahlen."],
+  ["Ich habe noch keine konkrete Idee. Hilft mir das trotzdem?", "Genau dafur ist es gebaut. Gib ein Thema ein (z.B. 'Hunde', 'Fitness', 'Handwerker') und Kaching OS zeigt dir profitable Sub-Nischen mit wenig Konkurrenz."],
+  ["Was mache ich mit dem Ergebnis?", "Du nimmst die Nische mit dem hoechsten Score und baust mit Shopify, Lovable oder WordPress dein Business. Kaching OS sagt dir WAS — das WIE machst du mit den Tools, die du kennst."],
+  ["Gibt es eine Geld-zuruck-Garantie?", "14 Tage, keine Fragen. Wenn dir Kaching OS keine profitable Nische zeigt, bekommst du dein Geld zurueck. Kein Risiko."],
+  ["Warum sollte ich jetzt starten und nicht spaeter?", "Jede Nische hat ein Zeitfenster. Wenn du eine steigende Nische mit wenig Konkurrenz findest, zaehlt Geschwindigkeit. Wer zuerst baut, gewinnt. Der Free Plan kostet nichts — du verlierst nur Zeit, wenn du wartest."]
 ];
 
 /* ── Niche search ── */
@@ -231,19 +232,19 @@ function Hero() {
             </div>
 
             <h1 className="text-[2.25rem] font-bold leading-[1.08] tracking-[-0.03em] text-black sm:text-[3rem]">
-              Du hast die Tools.<br />
-              <span className="text-gray-400">Dir fehlt die Nische.</span>
+              Finde heraus, ob deine<br />
+              <span className="text-gray-400">Nische Geld bringt.</span>
             </h1>
 
             <p className="mt-4 max-w-md text-[15px] leading-[1.7] text-gray-500">
-              Kaching OS scannt <strong className="text-black">echte Google-Daten</strong> und zeigt dir in 30 Sekunden, welche Nischen Nachfrage haben, wenig Konkurrenz und Kaufintent — damit du nicht ins Blaue baust.
+              <strong className="text-black">Kostenloser Nischen-Audit:</strong> Kaching OS scannt echte Google-Daten und zeigt dir in 30 Sekunden Nachfrage, Konkurrenz und Kaufintent — bevor du Zeit und Geld in die falsche Idee steckst.
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a href="#demo" className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-black px-6 text-[14px] font-semibold text-white transition hover:bg-gray-800">
-                Jetzt erste Nische scannen <IconArrowRight className="h-4 w-4" />
+                Kostenlosen Audit starten <IconArrowRight className="h-4 w-4" />
               </a>
-              <span className="text-[12px] text-gray-400">Kostenlos. Keine Kreditkarte.</span>
+              <span className="text-[12px] text-gray-400">30 Sek. Kein Abo. Keine Kreditkarte.</span>
             </div>
 
             {/* Social proof */}
@@ -395,6 +396,44 @@ function PainSection() {
   );
 }
 
+/* ── COST OF INACTION — translate pain into money ── */
+function CostSection() {
+  return (
+    <section className="border-t border-gray-200/60 bg-black text-white">
+      <div className="mx-auto max-w-5xl px-5 py-10 sm:py-14">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-gray-500">Was dich Raten kostet</p>
+          <h2 className="mt-2 text-[1.5rem] font-bold leading-[1.2] tracking-[-0.02em] sm:text-[1.75rem]">
+            Jeder Monat ohne validierte Nische kostet dich:
+          </h2>
+        </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-5 text-center">
+            <p className="text-[32px] font-bold tracking-tight">3 Monate</p>
+            <p className="mt-1 text-[13px] text-gray-400">Bauzeit fur ein Produkt das niemand will</p>
+          </div>
+          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-5 text-center">
+            <p className="text-[32px] font-bold tracking-tight">2.000+ EUR</p>
+            <p className="mt-1 text-[13px] text-gray-400">fur Ads, Tools und Domains ohne Return</p>
+          </div>
+          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-5 text-center">
+            <p className="text-[32px] font-bold tracking-tight">100%</p>
+            <p className="mt-1 text-[13px] text-gray-400">Motivation verloren, Projekt aufgegeben</p>
+          </div>
+        </div>
+        <p className="mt-6 text-center text-[14px] text-gray-400">
+          Ein Nischen-Audit dauert 30 Sekunden. Das falsche Produkt zu bauen dauert Monate.
+        </p>
+        <div className="mt-5 text-center">
+          <a href="#demo" className="inline-flex h-10 items-center gap-2 rounded-md bg-white px-5 text-[13px] font-semibold text-black transition hover:bg-gray-100">
+            Jetzt kostenlos pruefen <IconArrowRight className="h-3.5 w-3.5" />
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ── HOW — Solution in 3 steps ── */
 function HowSection() {
   return (
@@ -429,15 +468,26 @@ function HowSection() {
 const TEST_EMAIL = "test@kaching.os";
 const TEST_PASSWORD = "kaching2024";
 
-function LoginGate({ onLogin }: { onLogin: () => void }) {
+function LoginGate({ onLogin }: { onLogin: (email: string) => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"email" | "login">("email");
   const [error, setError] = useState("");
 
-  function handleSubmit(e: FormEvent) {
+  function handleEmailSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || !email.includes("@")) {
+      setError("Bitte gib eine gueltige E-Mail ein.");
+      return;
+    }
+    // Email capture — any email unlocks, we collect the lead
+    onLogin(email);
+  }
+
+  function handleLoginSubmit(e: FormEvent) {
     e.preventDefault();
     if (email === TEST_EMAIL && password === TEST_PASSWORD) {
-      onLogin();
+      onLogin(email);
     } else {
       setError("Falsche Zugangsdaten. Teste: test@kaching.os / kaching2024");
     }
@@ -445,32 +495,47 @@ function LoginGate({ onLogin }: { onLogin: () => void }) {
 
   return (
     <div className="mx-auto max-w-sm">
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="mb-5 flex items-center justify-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-black">
-            <IconLock className="h-5 w-5 text-white" />
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
+        <div className="mb-4 flex items-center justify-center">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-black">
+            <IconSearch className="h-5 w-5 text-white" />
           </div>
         </div>
-        <h3 className="text-center text-[17px] font-bold">Dashboard freischalten</h3>
-        <p className="mt-1.5 text-center text-[13px] text-gray-500">Melde dich an, um den Nischen-Scanner zu nutzen.</p>
+        <h3 className="text-center text-[17px] font-bold">Kostenloser Nischen-Audit</h3>
+        <p className="mt-1.5 text-center text-[13px] text-gray-500">Gib deine E-Mail ein und scanne deine erste Nische — in 30 Sekunden.</p>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
-          <div>
-            <label className="text-[12px] font-medium text-gray-500">E-Mail</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="test@kaching.os" className="mt-1 h-10 w-full rounded-md border border-gray-200 px-3 text-[13px] outline-none transition focus:border-black focus:ring-1 focus:ring-black" />
-          </div>
-          <div>
-            <label className="text-[12px] font-medium text-gray-500">Passwort</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="kaching2024" className="mt-1 h-10 w-full rounded-md border border-gray-200 px-3 text-[13px] outline-none transition focus:border-black focus:ring-1 focus:ring-black" />
-          </div>
-          {error && <p className="text-[12px] text-red-600">{error}</p>}
-          <button type="submit" className="h-10 w-full rounded-md bg-black text-[13px] font-semibold text-white transition hover:bg-gray-800">Einloggen</button>
-        </form>
+        {mode === "email" ? (
+          <form onSubmit={handleEmailSubmit} className="mt-5 space-y-3">
+            <div>
+              <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="deine@email.de" className="h-10 w-full rounded-md border border-gray-200 px-3 text-[13px] outline-none transition focus:border-black focus:ring-1 focus:ring-black" />
+            </div>
+            {error && <p className="text-[12px] text-red-600">{error}</p>}
+            <button type="submit" className="h-10 w-full rounded-md bg-black text-[13px] font-semibold text-white transition hover:bg-gray-800">
+              Audit starten — kostenlos
+            </button>
+            <p className="text-center text-[11px] text-gray-400">3 Scans gratis. Kein Spam. Jederzeit abmelden.</p>
+          </form>
+        ) : (
+          <form onSubmit={handleLoginSubmit} className="mt-5 space-y-3">
+            <div>
+              <label className="text-[12px] font-medium text-gray-500">E-Mail</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="test@kaching.os" className="mt-1 h-10 w-full rounded-md border border-gray-200 px-3 text-[13px] outline-none transition focus:border-black focus:ring-1 focus:ring-black" />
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-gray-500">Passwort</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="kaching2024" className="mt-1 h-10 w-full rounded-md border border-gray-200 px-3 text-[13px] outline-none transition focus:border-black focus:ring-1 focus:ring-black" />
+            </div>
+            {error && <p className="text-[12px] text-red-600">{error}</p>}
+            <button type="submit" className="h-10 w-full rounded-md bg-black text-[13px] font-semibold text-white transition hover:bg-gray-800">Einloggen</button>
+            <div className="rounded-md bg-gray-50 p-2.5">
+              <p className="font-mono text-[10px] text-gray-500">Test: test@kaching.os / kaching2024</p>
+            </div>
+          </form>
+        )}
 
-        <div className="mt-4 rounded-md bg-gray-50 p-3">
-          <p className="text-[11px] font-semibold text-gray-500">Test-Account:</p>
-          <p className="mt-0.5 font-mono text-[11px] text-gray-600">test@kaching.os / kaching2024</p>
-        </div>
+        <button onClick={() => { setMode(mode === "email" ? "login" : "email"); setError(""); }} className="mt-3 w-full text-center text-[11px] text-gray-400 hover:text-gray-600 transition">
+          {mode === "email" ? "Bereits registriert? Login" : "Noch kein Account? E-Mail reicht"}
+        </button>
       </div>
     </div>
   );
@@ -760,15 +825,15 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 }
 
 /* ── Dashboard Section wrapper with auth gate ── */
-function DashboardSection({ isLoggedIn, onLogin, onLogout }: { isLoggedIn: boolean; onLogin: () => void; onLogout: () => void }) {
+function DashboardSection({ isLoggedIn, onLogin, onLogout }: { isLoggedIn: boolean; onLogin: (email: string) => void; onLogout: () => void }) {
   return (
     <section id="demo" className="border-t border-gray-200/60">
       <div className="mx-auto max-w-5xl px-5 py-12 sm:py-16">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-gray-400">Live Dashboard</p>
-            <h2 className="mt-2 text-[1.75rem] font-bold leading-[1.15] tracking-[-0.02em] sm:text-[2rem]">Scanne deine erste Nische</h2>
-            <p className="mt-1 text-[14px] text-gray-500">{isLoggedIn ? "Gib ein Keyword ein und erhalte in Sekunden echte Daten." : "Logge dich ein, um den Scanner zu nutzen."}</p>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-gray-400">Kostenloser Nischen-Audit</p>
+            <h2 className="mt-2 text-[1.75rem] font-bold leading-[1.15] tracking-[-0.02em] sm:text-[2rem]">Teste deine Idee in 30 Sekunden</h2>
+            <p className="mt-1 text-[14px] text-gray-500">{isLoggedIn ? "Gib ein Keyword ein und erhalte echte Nachfrage-Daten von Google." : "E-Mail eingeben, sofort scannen. Keine Kreditkarte."}</p>
           </div>
           {isLoggedIn && (
             <div className="flex items-center gap-2 text-[12px] text-gray-400">
@@ -919,6 +984,7 @@ function PricingSection() {
                 </div>
                 <p className={`mt-1 text-[13px] ${f ? "text-gray-400" : "text-gray-500"}`}>{t.desc}</p>
                 {t.seats && <p className="mt-2 rounded bg-amber-500/20 px-2 py-1 text-[11px] font-semibold text-amber-200">{t.seats}</p>}
+                {"annual" in t && t.annual && <p className={`mt-1 text-[11px] ${f ? "text-gray-500" : "text-gray-400"}`}>{t.annual}</p>}
                 <button className={`mt-4 w-full rounded-md py-2.5 text-[13px] font-semibold transition ${f ? "bg-white text-black hover:bg-gray-100" : "border border-gray-200 hover:bg-gray-50"}`}>{t.cta}</button>
                 <ul className={`mt-4 space-y-2 text-[13px] ${f ? "text-gray-300" : "text-gray-500"}`}>
                   {t.items.map(item => <li key={item} className="flex items-center gap-2"><IconCheck className={`h-3.5 w-3.5 shrink-0 ${f ? "text-gray-500" : "text-gray-400"}`} />{item}</li>)}
@@ -989,9 +1055,11 @@ function Footer() {
 export default function Home() {
   const [nav, setNav] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
-  function handleLogin() {
+  function handleLogin(email: string) {
     setIsLoggedIn(true);
+    setUserEmail(email);
     // Scroll to dashboard after login
     setTimeout(() => {
       document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" });
@@ -1009,6 +1077,7 @@ export default function Home() {
       <Hero />
       <Ticker />
       <PainSection />
+      <CostSection />
       <HowSection />
       <DashboardSection isLoggedIn={isLoggedIn} onLogin={handleLogin} onLogout={handleLogout} />
       <UseCasesSection />
