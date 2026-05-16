@@ -26,6 +26,7 @@ const IconClock = (p: { className?: string }) => <I {...p}><circle cx="12" cy="1
 const IconExternalLink = (p: { className?: string }) => <I {...p}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></I>;
 const IconChevronDown = (p: { className?: string }) => <I {...p}><path d="m6 9 6 6 6-6" /></I>;
 const IconRefresh = (p: { className?: string }) => <I {...p}><path d="M20 11a8 8 0 1 0 2 5.3" /><path d="M20 4v7h-7" /></I>;
+const IconShoppingBag = (p: { className?: string }) => <I {...p}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></I>;
 
 /* ── Types ── */
 type ScanResult = {
@@ -37,6 +38,18 @@ type ScanResult = {
   competition?: { googleResults: number; wikipedia: string | null; level: string; reasons: string[] };
   expandedKeywords: string[];
   scannedAt: string;
+};
+
+type CJProduct = {
+  id: string;
+  name: string;
+  image: string;
+  wholesalePrice: number;
+  retail: { low: number; high: number; margin: number };
+  category: string;
+  weight: number;
+  supplier: string;
+  link: string;
 };
 
 type HistoryItem = { result: ScanResult; id: string; date: string };
@@ -70,6 +83,8 @@ export default function DashboardPage() {
   const [animScore, setAnimScore] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
   const [scanCount, setScanCount] = useState(0);
+  const [products, setProducts] = useState<CJProduct[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
 
   const de = locale === "de";
 
@@ -83,6 +98,7 @@ export default function DashboardPage() {
     setResult(null);
     setAnimScore(0);
     setShowDetails(false);
+    setProducts([]);
 
     try {
       const res = await fetch("/api/scan", {
@@ -110,6 +126,14 @@ export default function DashboardPage() {
         if (s >= target) { s = target; clearInterval(interval); }
         setAnimScore(s);
       }, 15);
+
+      // Fetch CJ products in background
+      setProductsLoading(true);
+      fetch(`/api/products?keyword=${encodeURIComponent(keyword)}`)
+        .then(r => r.json())
+        .then(d => { if (d.products) setProducts(d.products.slice(0, 6)); })
+        .catch(() => {})
+        .finally(() => setProductsLoading(false));
     } catch {
       setStep("input");
     }
@@ -339,6 +363,60 @@ export default function DashboardPage() {
                     return <span key={i} className={`flex-1 rounded-sm ${color} transition-all hover:opacity-80`} style={{ height: `${Math.max(6, (point.value / max) * 100)}%` }} />;
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* ── PRODUCT OPPORTUNITIES (CJ Dropshipping) ── */}
+            {(productsLoading || products.length > 0) && (
+              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-[14px] font-bold text-gray-900">{de ? "Produkte die du verkaufen kannst" : "Products you can sell"}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{de ? "Direkt von CJ Dropshipping — kein Lager nötig" : "Direct from CJ Dropshipping — no inventory needed"}</p>
+                  </div>
+                  <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold text-blue-700">DROPSHIPPING</span>
+                </div>
+
+                {productsLoading ? (
+                  <div className="flex items-center justify-center py-8 gap-2 text-[13px] text-gray-400">
+                    <div className="h-4 w-4 rounded-full border-2 border-gray-300 border-t-black animate-spin" />
+                    {de ? "Suche Produkte..." : "Finding products..."}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {products.map(p => (
+                      <a key={p.id} href={p.link} target="_blank" rel="noopener noreferrer" className="group flex gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-3 transition hover:border-gray-300 hover:shadow-sm">
+                        {p.image ? (
+                          <img src={p.image} alt="" className="h-20 w-20 shrink-0 rounded-lg object-cover bg-gray-200" />
+                        ) : (
+                          <div className="h-20 w-20 shrink-0 rounded-lg bg-gray-200 flex items-center justify-center text-[10px] text-gray-400">No img</div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-semibold text-gray-900 line-clamp-2 leading-tight">{p.name}</p>
+                          <div className="mt-1.5 flex items-baseline gap-2">
+                            <span className="text-[11px] text-gray-400 line-through">${p.wholesalePrice.toFixed(2)}</span>
+                            <span className="text-[14px] font-bold text-green-700">${p.retail.low.toFixed(0)}-${p.retail.high.toFixed(0)}</span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-800">{p.retail.margin}% {de ? "Marge" : "margin"}</span>
+                            <span className="text-[10px] text-gray-400 group-hover:text-blue-600 transition">{de ? "Ansehen" : "View"} <IconExternalLink className="h-2.5 w-2.5 inline" /></span>
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {products.length > 0 && (
+                  <div className="mt-4 rounded-xl bg-blue-50 border border-blue-200 p-3">
+                    <p className="text-[11px] text-blue-800 leading-relaxed">
+                      <span className="font-bold">{de ? "So funktioniert's:" : "How it works:"}</span>{" "}
+                      {de
+                        ? "Du listest das Produkt in deinem Shop. Wenn ein Kunde bestellt, kauft CJ es und schickt es direkt an deinen Kunden. Du zahlst nur den Einkaufspreis."
+                        : "List the product in your store. When a customer orders, CJ buys and ships it directly to them. You only pay the wholesale price."}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
