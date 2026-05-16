@@ -1,20 +1,18 @@
 /**
  * CJ Dropshipping API v2.0 Integration
- * Docs: https://developers.cjdropshipping.com/api2.0/v1/product/listV2
+ *
+ * Auth flow: API Key → getAccessToken → use Access Token for all requests
+ * Token is valid for ~6 months, cached in memory.
  */
 
 export interface CJProduct {
   pid: string;
   productName: string;
   productImage: string;
-  sellPrice: number;       // USD wholesale price
+  sellPrice: number;
   categoryName: string;
-  productWeight: number;
-  productUnit: string;
-  productSku: string[];
-  supplierName: string;
-  entryCode: string;
-  logisticPrice?: number;
+  productWeight: string;
+  productSku: string;
 }
 
 export interface CJProductResult {
@@ -25,42 +23,69 @@ export interface CJProductResult {
 
 const CJ_BASE = "https://developers.cjdropshipping.com/api2.0/v1";
 
+// In-memory token cache
+let cachedAccessToken: string | null = null;
+let tokenExpiry = 0;
+
+/**
+ * Get a valid CJ access token (cached)
+ */
+async function getAccessToken(): Promise<string | null> {
+  if (cachedAccessToken && Date.now() < tokenExpiry) {
+    return cachedAccessToken;
+  }
+
+  const apiKey = process.env.CJ_ACCESS_TOKEN;
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch(`${CJ_BASE}/authentication/getAccessToken`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey }),
+    });
+    const data = await res.json();
+    if (data.code === 200 && data.data?.accessToken) {
+      cachedAccessToken = data.data.accessToken;
+      // Cache for 30 days (token lasts ~6 months)
+      tokenExpiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
+      return cachedAccessToken;
+    }
+    console.error("CJ auth failed:", data.message);
+    return null;
+  } catch (e) {
+    console.error("CJ auth error:", e);
+    return null;
+  }
+}
+
 /**
  * Search CJ Dropshipping products by keyword
  */
-export async function searchCJProducts(keyword: string, page = 1, size = 10): Promise<CJProductResult> {
-  const token = process.env.CJ_ACCESS_TOKEN;
+export async function searchCJProducts(keyword: string, page = 1, size = 8): Promise<CJProductResult> {
+  const token = await getAccessToken();
   if (!token) {
-    return { products: [], total: 0, error: "CJ_ACCESS_TOKEN not configured" };
+    return { products: [], total: 0, error: "CJ authentication failed" };
   }
 
   try {
     const url = `${CJ_BASE}/product/list?pageNum=${page}&pageSize=${size}&productNameEn=${encodeURIComponent(keyword)}`;
     const res = await fetch(url, {
       method: "GET",
-      headers: {
-        "CJ-Access-Token": token,
-        "Content-Type": "application/json",
-      },
+      headers: { "CJ-Access-Token": token },
     });
-
-    if (!res.ok) {
-      // Try alternative endpoint
-      return await searchCJProductsV2(keyword, token, page, size);
-    }
 
     const data = await res.json();
 
-    if (data.code !== 200 && data.result !== true) {
-      // Fallback to v2 search
-      return await searchCJProductsV2(keyword, token, page, size);
+    if (data.code !== 200) {
+      return { products: [], total: 0, error: data.message || "CJ search failed" };
     }
 
-    const list = data.data?.list || data.data || [];
-    const products: CJProduct[] = Array.isArray(list) ? list.map(mapCJProduct) : [];
+    const list = data.data?.list || [];
+    const products: CJProduct[] = Array.isArray(list) ? list.map(mapCJProduct).filter(p => p.sellPrice > 0) : [];
 
     return {
-      products: products.slice(0, size),
+      products,
       total: data.data?.total || products.length,
     };
   } catch (e) {
@@ -69,55 +94,31 @@ export async function searchCJProducts(keyword: string, page = 1, size = 10): Pr
   }
 }
 
-/**
- * V2 search endpoint (Elasticsearch-based)
- */
-async function searchCJProductsV2(keyword: string, token: string, page: number, size: number): Promise<CJProductResult> {
-  try {
-    const url = `${CJ_BASE}/product/list?pageNum=${page}&pageSize=${size}&productNameEn=${encodeURIComponent(keyword)}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "CJ-Access-Token": token,
-      },
-    });
-
-    const data = await res.json();
-    const list = data.data?.list || data.data || [];
-    const products: CJProduct[] = Array.isArray(list) ? list.map(mapCJProduct) : [];
-
-    return {
-      products: products.slice(0, size),
-      total: data.data?.total || products.length,
-    };
-  } catch {
-    return { products: [], total: 0, error: "CJ v2 search failed" };
-  }
-}
-
 function mapCJProduct(item: Record<string, unknown>): CJProduct {
+  // sellPrice can be "2.92 -- 5.61" or "8.49" — take the first number
+  let price = 0;
+  const raw = String(item.sellPrice || "0");
+  const match = raw.match(/[\d.]+/);
+  if (match) price = parseFloat(match[0]);
+
   return {
-    pid: (item.pid || item.id || "") as string,
-    productName: (item.productNameEn || item.productName || "") as string,
-    productImage: (item.productImage || item.bigImage || "") as string,
-    sellPrice: parseFloat(String(item.sellPrice || item.productPrice || 0)),
-    categoryName: (item.categoryName || item.categoryNameEn || "") as string,
-    productWeight: parseFloat(String(item.productWeight || 0)),
-    productUnit: (item.productUnit || "piece") as string,
-    productSku: Array.isArray(item.productSku) ? item.productSku : [],
-    supplierName: (item.supplierName || "") as string,
-    entryCode: (item.entryCode || "") as string,
+    pid: String(item.pid || ""),
+    productName: String(item.productNameEn || item.productName || ""),
+    productImage: String(item.productImage || ""),
+    sellPrice: price,
+    categoryName: String(item.categoryName || ""),
+    productWeight: String(item.productWeight || ""),
+    productSku: String(item.productSku || ""),
   };
 }
 
 /**
- * Estimate retail price based on wholesale price.
- * Standard dropshipping markup: 2.5x - 3.5x
+ * Estimate retail price. Standard dropshipping markup: 2.5x - 3.5x
  */
 export function estimateRetailPrice(wholesalePrice: number): { low: number; high: number; margin: number } {
   const low = Math.round(wholesalePrice * 2.5 * 100) / 100;
   const high = Math.round(wholesalePrice * 3.5 * 100) / 100;
   const avgRetail = (low + high) / 2;
-  const margin = Math.round(((avgRetail - wholesalePrice) / avgRetail) * 100);
+  const margin = avgRetail > 0 ? Math.round(((avgRetail - wholesalePrice) / avgRetail) * 100) : 0;
   return { low, high, margin };
 }

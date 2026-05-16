@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
     retail: estimateRetailPrice(p.sellPrice),
     category: p.categoryName,
     weight: p.productWeight,
-    supplier: p.supplierName,
     link: `https://cjdropshipping.com/product/p-${p.pid}.html`,
   }));
 
