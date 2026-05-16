@@ -495,492 +495,34 @@ function LoginGate({ onLogin }: { onLogin: (email: string) => void }) {
   );
 }
 
-/* ── Dashboard API types ── */
-type AiInsight = {
-  businessIdea: string;
-  tool: string;
-  toolReason: string;
-  steps: string[];
-  revenueModel: string;
-  expectedRevenue: string;
-  targetAudience: string;
-  oneLinePitch: string;
-} | null;
-
-type ScanResult = {
-  keyword: string;
-  score: { total: number; demand: number; trend: number; competition: number; intent: number; label: string; demandLabel: string; trendLabel: string; competitionLabel: string; summary: string };
-  autocomplete: { suggestions: string[]; count: number; commercialIntent: boolean; intentSignals: string[] };
-  trend: { direction: string; currentInterest: number; averageInterest: number; growthPercent: number; timeline: { date: string; value: number }[]; relatedQueries: string[] };
-  platforms?: { amazon: string[]; youtube: string[]; reddit: { title: string; subreddit: string; score: number }[] };
-  expandedKeywords: string[];
-  scannedAt: string;
-} | null;
-
-/* ══════════════════════════════════════
-   REDESIGNED DASHBOARD — Clear, actionable, visual
-   ══════════════════════════════════════ */
-function Dashboard({ onLogout }: { onLogout: () => void }) {
-  const { locale } = useLocale();
-  const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [liveResult, setLiveResult] = useState<ScanResult>(null);
-  const [aiInsight, setAiInsight] = useState<AiInsight>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [scanCount, setScanCount] = useState(0);
-  const [scanError, setScanError] = useState("");
-
-  async function fetchAiInsight(scanData: NonNullable<ScanResult>) {
-    setAiLoading(true);
-    try {
-      const res = await fetch("/api/ai-insight", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          keyword: scanData.keyword,
-          score: scanData.score,
-          trend: scanData.trend,
-          platforms: scanData.platforms,
-          locale
-        })
-      });
-      if (!res.ok) throw new Error("AI failed");
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setAiInsight(data);
-    } catch {
-      setAiInsight(null);
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
-  async function realScan(keyword: string) {
-    if (!keyword.trim()) return;
-    setLoading(true);
-    setScanError("");
-    setAiInsight(null);
-    try {
-      const res = await fetch("/api/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyword })
-      });
-      if (!res.ok) throw new Error("Scan failed");
-      const data: NonNullable<ScanResult> = await res.json();
-      setLiveResult(data);
-      setScanCount(c => c + 1);
-      // Auto-fetch AI insight
-      fetchAiInsight(data);
-    } catch {
-      setScanError(t("ui.scan.error", locale));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function onSubmit(e: FormEvent) { e.preventDefault(); realScan(q); }
-  function pick(kw: string) { setQ(kw); realScan(kw); }
-
-  const scoreColor = (v: number) => v >= 75 ? "text-green-600" : v >= 50 ? "text-amber-600" : "text-red-500";
-  const scoreBg = (v: number) => v >= 75 ? "bg-green-50 border-green-200" : v >= 50 ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200";
-
-  return (
-    <div className="space-y-4">
-      {/* Search bar */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <form onSubmit={onSubmit} className="flex gap-2">
-          <div className="relative min-w-0 flex-1">
-            <IconSearch className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input value={q} onChange={e => setQ(e.target.value)} placeholder={t("ui.placeholder", locale)} className="h-11 w-full rounded-lg border border-gray-200 pl-10 pr-4 text-[14px] outline-none transition placeholder:text-gray-400 focus:border-black focus:ring-2 focus:ring-black/5" />
-          </div>
-          <button type="submit" disabled={loading || !q.trim()} className="h-11 rounded-lg bg-black px-6 text-[13px] font-semibold text-white transition hover:bg-gray-800 disabled:opacity-40">
-            {loading ? t("ui.scanning", locale) : t("ui.scan", locale)}
-          </button>
-        </form>
-
-        {/* Quick keywords */}
-        <div className="mt-3 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {(locale === "en"
-            ? ["AI Automation", "Pet Food", "Online Course", "Shopify Upsell", "Local SEO", "Fitness Coach"]
-            : ["KI Automatisierung", "Haustier Snacks", "Online Kurs", "Shopify Upsell", "Local SEO", "Fitness Coach"]
-          ).map(kw => (
-            <button key={kw} onClick={() => pick(kw)} className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition ${q === kw ? "bg-black text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{kw}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* Loading state */}
-      {loading && (
-        <div className="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-black" />
-          <p className="mt-3 text-[13px] text-gray-500">{t("ui.scanning.desc", locale)}</p>
-          <div className="mt-4 mx-auto max-w-xs">
-            <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
-              <div className="h-full w-2/3 animate-pulse rounded-full bg-black" />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Error */}
-      {scanError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">{scanError}</div>
-      )}
-
-      {/* Results */}
-      {liveResult && !loading && (
-        <div className="space-y-4">
-          {/* ── TOP ROW: Score + Verdict ── */}
-          <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-            {/* Score Card */}
-            <div className={`rounded-xl border p-5 shadow-sm ${scoreBg(liveResult.score.total)}`}>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Opportunity Score</p>
-              <div className="mt-3 flex items-end gap-2">
-                <span className={`text-[56px] font-bold tracking-tight leading-none ${scoreColor(liveResult.score.total)}`}>{liveResult.score.total}</span>
-                <span className="mb-2 text-[16px] text-gray-400">/100</span>
-              </div>
-              <div className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-bold ${
-                liveResult.score.total >= 75 ? "bg-green-100 text-green-800" :
-                liveResult.score.total >= 50 ? "bg-amber-100 text-amber-800" :
-                "bg-red-100 text-red-800"
-              }`}>
-                {liveResult.score.total >= 75 ? t("ui.verdict.go", locale) :
-                 liveResult.score.total >= 50 ? t("ui.verdict.maybe", locale) :
-                 t("ui.verdict.nogo", locale)}
-              </div>
-              <p className="mt-3 text-[12px] leading-relaxed text-gray-600">{liveResult.score.summary}</p>
-            </div>
-
-            {/* Score Breakdown */}
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider mb-4">{locale === "en" ? "Score Breakdown" : "Score-Aufschlusselung"}</p>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: t("ui.demand", locale), value: liveResult.score.demand, icon: <IconBarChart className="h-4 w-4" />, color: "green" },
-                  { label: t("ui.trend", locale), value: liveResult.score.trend, icon: <IconTrending className="h-4 w-4" />, color: "blue" },
-                  { label: t("ui.competition", locale), value: liveResult.score.competition, icon: <IconTarget className="h-4 w-4" />, color: "emerald" },
-                  { label: t("ui.intent", locale), value: liveResult.score.intent, icon: <IconDollar className="h-4 w-4" />, color: "amber" },
-                ].map(metric => (
-                  <div key={metric.label} className="rounded-lg border border-gray-100 bg-gray-50/50 p-3">
-                    <div className="flex items-center gap-2 text-gray-500">
-                      {metric.icon}
-                      <span className="text-[11px] font-medium">{metric.label}</span>
-                    </div>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="text-[22px] font-bold tracking-tight">{metric.value}</span>
-                      <span className="text-[11px] text-gray-400">/100</span>
-                    </div>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-gray-200">
-                      <div className={`h-full rounded-full transition-all duration-700 ${
-                        metric.color === "green" ? "bg-green-500" :
-                        metric.color === "blue" ? "bg-blue-500" :
-                        metric.color === "emerald" ? "bg-emerald-500" : "bg-amber-500"
-                      }`} style={{ width: `${metric.value}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── TREND CHART ── */}
-          {liveResult.trend.timeline.length > 0 && (
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <IconTrending className="h-4 w-4 text-gray-400" />
-                  <p className="text-[12px] font-semibold text-gray-500">Google Trends — 12 {locale === "en" ? "months" : "Monate"}</p>
-                </div>
-                <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                  liveResult.trend.direction === "rising" ? "bg-green-50 text-green-700" :
-                  liveResult.trend.direction === "falling" ? "bg-red-50 text-red-700" :
-                  "bg-gray-100 text-gray-600"
-                }`}>
-                  {liveResult.trend.direction === "rising" ? t("ui.rising", locale) :
-                   liveResult.trend.direction === "falling" ? t("ui.falling", locale) : t("ui.stable", locale)}
-                  {liveResult.trend.growthPercent !== 0 && ` ${liveResult.trend.growthPercent > 0 ? "+" : ""}${liveResult.trend.growthPercent}%`}
-                </div>
-              </div>
-              <div className="flex h-20 items-end gap-[3px]">
-                {liveResult.trend.timeline.slice(-30).map((point, i) => {
-                  const max = Math.max(...liveResult!.trend.timeline.map(p => p.value), 1);
-                  return (
-                    <span key={i} className={`flex-1 rounded-sm transition-all duration-300 ${
-                      liveResult!.trend.direction === "rising" ? "bg-green-400 hover:bg-green-500" :
-                      liveResult!.trend.direction === "falling" ? "bg-red-300 hover:bg-red-400" :
-                      "bg-gray-300 hover:bg-gray-400"
-                    }`} style={{ height: `${Math.max(6, (point.value / max) * 100)}%` }} />
-                  );
-                })}
-              </div>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-gray-400">
-                <span>{locale === "en" ? "Current Interest" : "Aktuelles Interesse"}: {liveResult.trend.currentInterest}/100</span>
-                <span>{locale === "en" ? "Average" : "Durchschnitt"}: {liveResult.trend.averageInterest}/100</span>
-              </div>
-            </div>
-          )}
-
-          {/* ── AI BUSINESS SUGGESTION ── */}
-          <div className="rounded-xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-600 text-white">
-                <IconWand className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-[13px] font-bold text-green-900">{t("ui.ai.title", locale)}</p>
-                <p className="text-[10px] text-green-600">Powered by GPT-4o</p>
-              </div>
-            </div>
-
-            {aiLoading && (
-              <div className="flex items-center gap-3 py-4">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-green-300 border-t-green-700" />
-                <p className="text-[13px] text-green-700">{t("ui.ai.loading", locale)}</p>
-              </div>
-            )}
-
-            {aiInsight && !aiLoading && (
-              <div className="space-y-4">
-                {/* Main idea */}
-                <div className="rounded-lg bg-white/80 border border-green-100 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-green-600 mb-1">{locale === "en" ? "Your Business Idea" : "Deine Business-Idee"}</p>
-                  <p className="text-[15px] font-bold text-gray-900 leading-snug">{aiInsight.businessIdea}</p>
-                  <p className="mt-2 text-[12px] italic text-gray-500">&ldquo;{aiInsight.oneLinePitch}&rdquo;</p>
-                </div>
-
-                {/* Key metrics row */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-lg bg-white/80 border border-green-100 p-3 text-center">
-                    <IconRocket className="h-4 w-4 mx-auto text-green-600" />
-                    <p className="mt-1 text-[10px] font-medium text-gray-500">{t("ui.ai.tool", locale)}</p>
-                    <p className="mt-0.5 text-[13px] font-bold text-gray-900">{aiInsight.tool}</p>
-                  </div>
-                  <div className="rounded-lg bg-white/80 border border-green-100 p-3 text-center">
-                    <IconDollar className="h-4 w-4 mx-auto text-green-600" />
-                    <p className="mt-1 text-[10px] font-medium text-gray-500">{t("ui.ai.revenue", locale)}</p>
-                    <p className="mt-0.5 text-[13px] font-bold text-gray-900">{aiInsight.expectedRevenue}</p>
-                  </div>
-                  <div className="rounded-lg bg-white/80 border border-green-100 p-3 text-center">
-                    <IconUsers className="h-4 w-4 mx-auto text-green-600" />
-                    <p className="mt-1 text-[10px] font-medium text-gray-500">{t("ui.ai.audience", locale)}</p>
-                    <p className="mt-0.5 text-[11px] font-semibold text-gray-900 leading-tight">{aiInsight.targetAudience}</p>
-                  </div>
-                </div>
-
-                {/* 3-Step Plan */}
-                <div className="rounded-lg bg-white/80 border border-green-100 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-green-600 mb-3">{t("ui.ai.steps", locale)}</p>
-                  <div className="space-y-2.5">
-                    {aiInsight.steps.map((step, i) => (
-                      <div key={i} className="flex items-start gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600 text-[11px] font-bold text-white">{i + 1}</span>
-                        <p className="text-[13px] text-gray-700 leading-snug pt-0.5">{step}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* CTA to build */}
-                <div className="flex flex-col sm:flex-row gap-2">
-                  {aiInsight.tool === "Lovable" && (
-                    <a href="https://lovable.dev" target="_blank" rel="noopener noreferrer" className="flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green-700 text-[13px] font-semibold text-white transition hover:bg-green-800">
-                      {t("ui.ai.build", locale)} Lovable <IconExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  )}
-                  {aiInsight.tool === "Shopify" && (
-                    <a href="https://shopify.com" target="_blank" rel="noopener noreferrer" className="flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green-700 text-[13px] font-semibold text-white transition hover:bg-green-800">
-                      {t("ui.ai.build", locale)} Shopify <IconExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  )}
-                  {!["Lovable", "Shopify"].includes(aiInsight.tool) && (
-                    <button className="flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green-700 text-[13px] font-semibold text-white transition hover:bg-green-800">
-                      {t("ui.ai.build", locale)} {aiInsight.tool} <IconExternalLink className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                  <button onClick={() => realScan(q)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-[13px] font-medium text-gray-700 transition hover:bg-gray-50">
-                    <IconRefresh className="h-3.5 w-3.5" /> {locale === "en" ? "Rescan" : "Neu scannen"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {!aiInsight && !aiLoading && (
-              <p className="text-[12px] text-green-600 italic">{t("ui.ai.error", locale)}</p>
-            )}
-          </div>
-
-          {/* ── PLATFORM SIGNALS ── */}
-          {liveResult.platforms && (liveResult.platforms.amazon.length > 0 || liveResult.platforms.youtube.length > 0 || liveResult.platforms.reddit.length > 0) && (
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider mb-4">{t("ui.platforms", locale)}</p>
-              <div className="grid gap-4 sm:grid-cols-3">
-                {/* Amazon */}
-                {liveResult.platforms.amazon.length > 0 && (
-                  <div className="rounded-lg border border-amber-100 bg-amber-50/50 p-3">
-                    <p className="text-[11px] font-bold text-amber-800 mb-2">{t("ui.amazon", locale)}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {liveResult.platforms.amazon.slice(0, 6).map((s, i) => (
-                        <span key={i} className="rounded-full bg-white border border-amber-200 px-2 py-0.5 text-[10px] text-amber-800">{s}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* YouTube */}
-                {liveResult.platforms.youtube.length > 0 && (
-                  <div className="rounded-lg border border-red-100 bg-red-50/50 p-3">
-                    <p className="text-[11px] font-bold text-red-800 mb-2">{t("ui.youtube", locale)}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {liveResult.platforms.youtube.slice(0, 6).map((s, i) => (
-                        <span key={i} className="rounded-full bg-white border border-red-200 px-2 py-0.5 text-[10px] text-red-800">{s}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Reddit */}
-                {liveResult.platforms.reddit.length > 0 && (
-                  <div className="rounded-lg border border-orange-100 bg-orange-50/50 p-3">
-                    <p className="text-[11px] font-bold text-orange-800 mb-2">{t("ui.reddit", locale)}</p>
-                    <div className="space-y-1.5">
-                      {liveResult.platforms.reddit.slice(0, 3).map((post, i) => (
-                        <div key={i} className="text-[10px]">
-                          <p className="text-gray-700 line-clamp-1 font-medium">{post.title}</p>
-                          <p className="text-gray-400">r/{post.subreddit} · {post.score} upvotes</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── RELATED KEYWORDS ── */}
-          {(liveResult.trend.relatedQueries.length > 0 || liveResult.expandedKeywords.length > 0) && (
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider mb-3">{t("ui.keywords", locale)}</p>
-              <div className="flex flex-wrap gap-2">
-                {liveResult.trend.relatedQueries.slice(0, 8).map((rq, i) => (
-                  <button key={`rq-${i}`} onClick={() => pick(rq)} className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-700 transition hover:bg-blue-100">{rq}</button>
-                ))}
-                {liveResult.expandedKeywords.slice(0, 8).map((kw, i) => (
-                  <button key={`ek-${i}`} onClick={() => pick(kw)} className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-medium text-gray-600 transition hover:bg-gray-100">{kw}</button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── AUTOCOMPLETE DETAILS ── */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider">Google Autocomplete</p>
-              <span className="text-[11px] text-gray-400">{liveResult.autocomplete.count} {locale === "en" ? "suggestions" : "Vorschlage"}</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {liveResult.autocomplete.suggestions.map((s, i) => (
-                <button key={i} onClick={() => pick(s)} className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] text-gray-700 transition hover:bg-gray-100 hover:border-gray-300">{s}</button>
-              ))}
-            </div>
-            {liveResult.autocomplete.commercialIntent && (
-              <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 border border-green-100 px-3 py-2">
-                <IconDollar className="h-3.5 w-3.5 text-green-600" />
-                <span className="text-[11px] font-medium text-green-700">
-                  {locale === "en" ? "Commercial intent detected" : "Kaufintent erkannt"}: {liveResult.autocomplete.intentSignals.join(", ")}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Empty state */}
-      {!liveResult && !loading && (
-        <div className="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
-            <IconSearch className="h-6 w-6 text-gray-400" />
-          </div>
-          <h3 className="mt-4 text-[15px] font-semibold text-gray-900">
-            {locale === "en" ? "Enter a niche to scan" : "Gib eine Nische ein"}
-          </h3>
-          <p className="mt-1.5 text-[13px] text-gray-500 max-w-sm mx-auto">
-            {locale === "en"
-              ? "Type any business idea, topic, or keyword. We'll analyze demand, competition, and trends across 4 platforms."
-              : "Tippe eine Business-Idee, ein Thema oder Keyword ein. Wir analysieren Nachfrage, Konkurrenz und Trends uber 4 Plattformen."
-            }
-          </p>
-        </div>
-      )}
-
-      {/* Footer bar */}
-      <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-4 text-[11px] text-gray-400">
-          <span className="flex items-center gap-1"><IconUsers className="h-3 w-3" />2.847 {locale === "en" ? "founders" : "Grunder"}</span>
-          <span className="flex items-center gap-1"><IconFire className="h-3 w-3" />12.400+ Scans</span>
-          {scanCount > 0 && <span>{scanCount}/3 Scans · <span className="font-medium text-gray-600">{Math.max(0, 3 - scanCount)} {t("ui.scans.left", locale)}</span></span>}
-        </div>
-        <div className="flex items-center gap-3">
-          <a href="#preise" className="text-[11px] font-medium text-black underline decoration-gray-300 underline-offset-2">{t("ui.upgraden", locale)}</a>
-          <button onClick={onLogout} className="text-[11px] text-gray-400 hover:text-gray-600 transition">{t("ui.ausloggen", locale)}</button>
-        </div>
-      </div>
-
-      {/* Scan limit nudge */}
-      {scanCount >= 2 && (
-        <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-[12px] font-medium text-amber-800">
-            {locale === "en"
-              ? `You have ${Math.max(0, 3 - scanCount)} free scans left. Upgrade for unlimited access + AI suggestions.`
-              : `Du hast noch ${Math.max(0, 3 - scanCount)} kostenlose Scans. ${t("ui.upgrade.msg", locale)}`
-            }
-          </p>
-          <a href="#preise" className="shrink-0 rounded-lg bg-black px-4 py-1.5 text-[11px] font-semibold text-white">{t("ui.upgraden", locale)}</a>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ── Dashboard Section wrapper ── */
-function DashboardSection({ isLoggedIn, onLogin, onLogout }: { isLoggedIn: boolean; onLogin: (email: string) => void; onLogout: () => void }) {
+function DashboardSection({ onLogin }: { onLogin: (email: string) => void }) {
   const { locale } = useLocale();
   return (
     <section id="demo" className="border-t border-gray-200/60">
       <div className="mx-auto max-w-4xl px-5 py-12 sm:py-16">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-gray-400">{t("dash.label", locale)}</p>
-            <h2 className="mt-2 text-[1.75rem] font-bold leading-[1.15] tracking-[-0.02em] sm:text-[2rem]">{t("dash.h2", locale)}</h2>
-            <p className="mt-1 text-[14px] text-gray-500">{isLoggedIn ? t("dash.loggedin", locale) : t("dash.loggedout", locale)}</p>
-          </div>
-          {isLoggedIn && (
-            <div className="flex items-center gap-2 text-[12px] text-gray-400">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
-              <span>{t("dash.live", locale)}</span>
-            </div>
-          )}
+        <div className="mb-6 text-center">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-gray-400">{t("dash.label", locale)}</p>
+          <h2 className="mt-2 text-[1.75rem] font-bold leading-[1.15] tracking-[-0.02em] sm:text-[2rem]">{t("dash.h2", locale)}</h2>
+          <p className="mt-1 text-[14px] text-gray-500">{t("dash.loggedout", locale)}</p>
         </div>
 
-        {isLoggedIn ? (
-          <Dashboard onLogout={onLogout} />
-        ) : (
-          <div className="relative">
-            <div className="pointer-events-none select-none overflow-hidden rounded-xl border border-gray-200 opacity-30 blur-[2px]">
-              <div className="p-4 space-y-4">
-                <div className="h-11 rounded-lg border border-gray-200 bg-gray-50" />
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  {[1,2,3,4].map(i => <div key={i} className="h-24 rounded-lg border border-gray-200 bg-gray-50" />)}
-                </div>
-                <div className="h-32 rounded-lg border border-gray-200 bg-gray-50" />
-                <div className="h-40 rounded-lg border border-green-200 bg-green-50" />
+        <div className="relative">
+          <div className="pointer-events-none select-none overflow-hidden rounded-xl border border-gray-200 opacity-30 blur-[2px]">
+            <div className="p-4 space-y-4">
+              <div className="h-11 rounded-lg border border-gray-200 bg-gray-50" />
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {[1,2,3,4].map(i => <div key={i} className="h-24 rounded-lg border border-gray-200 bg-gray-50" />)}
               </div>
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <LoginGate onLogin={onLogin} />
+              <div className="h-32 rounded-lg border border-gray-200 bg-gray-50" />
+              <div className="h-40 rounded-lg border border-green-200 bg-green-50" />
             </div>
           </div>
-        )}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <LoginGate onLogin={onLogin} />
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -1171,35 +713,35 @@ function Footer() {
    ══════════════════════════════════════ */
 export default function Home() {
   const [nav, setNav] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [locale, setLocale] = useState<Locale>("de");
 
   useEffect(() => {
     setLocale(detectLocale());
+    // If already logged in, redirect to dashboard
+    if (typeof window !== "undefined" && localStorage.getItem("kaching_logged_in") === "true") {
+      window.location.href = "/dashboard";
+    }
   }, []);
 
   function handleLogin(email: string) {
-    setIsLoggedIn(true);
-    setTimeout(() => {
-      document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  }
-
-  function handleLogout() {
-    setIsLoggedIn(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("kaching_email", email);
+      localStorage.setItem("kaching_logged_in", "true");
+      window.location.href = "/dashboard";
+    }
   }
 
   return (
     <LocaleContext.Provider value={{ locale, setLocale }}>
       <div className="min-h-screen bg-white text-gray-900">
-        <Header onMenu={() => setNav(true)} isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+        <Header onMenu={() => setNav(true)} isLoggedIn={false} onLogout={() => {}} />
         {nav && <MobileNav onClose={() => setNav(false)} />}
         <Hero />
         <Ticker />
         <PainSection />
         <CostSection />
         <HowSection />
-        <DashboardSection isLoggedIn={isLoggedIn} onLogin={handleLogin} onLogout={handleLogout} />
+        <DashboardSection onLogin={handleLogin} />
         <UseCasesSection />
         <TestimonialsSection />
         <NumbersSection />
