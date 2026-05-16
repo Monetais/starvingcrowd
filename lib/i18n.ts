@@ -27,8 +27,6 @@ const translations = {
   "hero.social": { de: "nutzen Kaching OS", en: "use Kaching OS" },
   "hero.founders": { de: "2.847+ Grunder", en: "2,847+ founders" },
 
-  // Ticker — no translation needed (brand names)
-
   // Pain
   "pain.label": { de: "Das Problem", en: "The Problem" },
   "pain.h2a": { de: "90% aller Startups scheitern.", en: "90% of startups fail." },
@@ -72,6 +70,8 @@ const translations = {
   "login.legal": { de: "3 Scans gratis. Kein Spam. Jederzeit abmelden.", en: "3 free scans. No spam. Unsubscribe anytime." },
   "login.switch.login": { de: "Bereits registriert? Login", en: "Already registered? Login" },
   "login.switch.email": { de: "Noch kein Account? E-Mail reicht", en: "No account? Email is enough" },
+  "login.error.email": { de: "Bitte gib eine gueltige E-Mail ein.", en: "Please enter a valid email." },
+  "login.error.creds": { de: "Falsche Zugangsdaten. Teste: test@kaching.os / kaching2024", en: "Wrong credentials. Try: test@kaching.os / kaching2024" },
 
   // Use cases
   "uc.label": { de: "Ergebnisse", en: "Results" },
@@ -81,6 +81,12 @@ const translations = {
   // Testimonials
   "test.label": { de: "Testimonials", en: "Testimonials" },
   "test.h2": { de: "Was Grunder sagen", en: "What founders say" },
+
+  // Numbers
+  "num.founders": { de: "Grunder", en: "Founders" },
+  "num.scanned": { de: "Nischen gescannt", en: "Niches scanned" },
+  "num.time": { de: "bis zum Score", en: "to get your score" },
+  "num.launch": { de: "launchen in 14 Tagen", en: "launch within 14 days" },
 
   // Pricing
   "price.label": { de: "Preise", en: "Pricing" },
@@ -106,6 +112,39 @@ const translations = {
   "ui.upgraden": { de: "Upgraden", en: "Upgrade" },
   "ui.ausloggen": { de: "Ausloggen", en: "Logout" },
   "ui.placeholder": { de: "Nische scannen: z.B. KI Coaching, Hundefutter...", en: "Scan a niche: e.g. AI Coaching, Pet Food..." },
+  "ui.trend": { de: "Trend", en: "Trend" },
+  "ui.intent": { de: "Kaufintent", en: "Buying Intent" },
+  "ui.rising": { de: "Steigend", en: "Rising" },
+  "ui.falling": { de: "Fallend", en: "Falling" },
+  "ui.stable": { de: "Stabil", en: "Stable" },
+  "ui.high": { de: "Hoch", en: "High" },
+  "ui.medium": { de: "Mittel", en: "Medium" },
+  "ui.low": { de: "Niedrig", en: "Low" },
+  "ui.excellent": { de: "Ausgezeichnet", en: "Excellent" },
+  "ui.strong": { de: "Stark", en: "Strong" },
+  "ui.solid": { de: "Solide", en: "Solid" },
+  "ui.weak": { de: "Schwach", en: "Weak" },
+  "ui.verdict.go": { de: "NISCHE VALIDIERT", en: "NICHE VALIDATED" },
+  "ui.verdict.maybe": { de: "POTENZIAL VORHANDEN", en: "POTENTIAL EXISTS" },
+  "ui.verdict.nogo": { de: "NISCHE UEBERDENKEN", en: "RECONSIDER NICHE" },
+  "ui.ai.title": { de: "KI Business-Vorschlag", en: "AI Business Suggestion" },
+  "ui.ai.loading": { de: "KI analysiert deine Nische...", en: "AI analyzing your niche..." },
+  "ui.ai.tool": { de: "Empfohlenes Tool", en: "Recommended Tool" },
+  "ui.ai.revenue": { de: "Erwarteter Umsatz", en: "Expected Revenue" },
+  "ui.ai.audience": { de: "Zielgruppe", en: "Target Audience" },
+  "ui.ai.steps": { de: "Dein 3-Schritte-Plan", en: "Your 3-Step Plan" },
+  "ui.ai.build": { de: "Jetzt bauen mit", en: "Build now with" },
+  "ui.ai.error": { de: "KI-Analyse nicht verfugbar", en: "AI analysis unavailable" },
+  "ui.platforms": { de: "Plattform-Signale", en: "Platform Signals" },
+  "ui.amazon": { de: "Amazon (Kaufintent)", en: "Amazon (Buy Intent)" },
+  "ui.youtube": { de: "YouTube (Lernintent)", en: "YouTube (Learn Intent)" },
+  "ui.reddit": { de: "Reddit (Community)", en: "Reddit (Community)" },
+  "ui.keywords": { de: "Verwandte Keywords", en: "Related Keywords" },
+  "ui.results.for": { de: "Ergebnisse fur", en: "Results for" },
+  "ui.scans.left": { de: "Free ubrig", en: "free left" },
+  "ui.upgrade.msg": { de: "Upgrade fur unbegrenzten Zugang.", en: "Upgrade for unlimited access." },
+  "ui.scan.error": { de: "Scan fehlgeschlagen. Versuche es erneut.", en: "Scan failed. Please try again." },
+  "ui.free.plan": { de: "Free Plan", en: "Free Plan" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
