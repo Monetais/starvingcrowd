@@ -1,6 +1,10 @@
 "use client";
 
-import React, { FormEvent, useState, useEffect } from "react";
+import React, { FormEvent, useState, useEffect, createContext, useContext } from "react";
+import { type Locale, detectLocale, t } from "@/lib/i18n";
+
+const LocaleContext = createContext<{ locale: Locale; setLocale: (l: Locale) => void }>({ locale: "de", setLocale: () => {} });
+function useLocale() { return useContext(LocaleContext); }
 
 /* ── Icons ── */
 function I({ children, className = "h-4 w-4" }: { children: React.ReactNode; className?: string }) {
@@ -176,22 +180,30 @@ function Logo() {
 }
 
 function Header({ onMenu, isLoggedIn, onLogout }: { onMenu: () => void; isLoggedIn: boolean; onLogout: () => void }) {
+  const { locale, setLocale } = useLocale();
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200/60 bg-white/80 backdrop-blur-lg">
       <div className="mx-auto flex h-12 max-w-5xl items-center justify-between px-5">
         <Logo />
         <nav className="hidden items-center gap-6 md:flex">
-          {navLinks.map(l => <a key={l.href} href={l.href} className="text-[13px] text-gray-500 transition hover:text-black">{l.label}</a>)}
+          <a href="#how" className="text-[13px] text-gray-500 transition hover:text-black">{t("nav.how", locale)}</a>
+          <a href="#demo" className="text-[13px] text-gray-500 transition hover:text-black">{t("nav.dashboard", locale)}</a>
+          <a href="#usecases" className="text-[13px] text-gray-500 transition hover:text-black">{t("nav.results", locale)}</a>
+          <a href="#preise" className="text-[13px] text-gray-500 transition hover:text-black">{t("nav.pricing", locale)}</a>
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Language toggle */}
+          <button onClick={() => setLocale(locale === "de" ? "en" : "de")} className="rounded-md border border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-500 transition hover:bg-gray-50">
+            {locale === "de" ? "EN" : "DE"}
+          </button>
           {isLoggedIn ? (
             <button onClick={onLogout} className="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-[13px] font-medium text-gray-500 transition hover:bg-gray-50">
-              <IconLogout className="h-3.5 w-3.5" /> Logout
+              <IconLogout className="h-3.5 w-3.5" /> {t("nav.logout", locale)}
             </button>
           ) : (
             <>
-              <a href="#demo" className="hidden text-[13px] font-medium text-gray-500 hover:text-black sm:block">Login</a>
-              <a href="#demo" className="hidden rounded-md bg-black px-3.5 py-1.5 text-[13px] font-semibold text-white transition hover:bg-gray-800 sm:block">Kostenlos testen</a>
+              <a href="#demo" className="hidden text-[13px] font-medium text-gray-500 hover:text-black sm:block">{t("nav.login", locale)}</a>
+              <a href="#demo" className="hidden rounded-md bg-black px-3.5 py-1.5 text-[13px] font-semibold text-white transition hover:bg-gray-800 sm:block">{t("nav.cta", locale)}</a>
             </>
           )}
           <button onClick={onMenu} className="grid h-8 w-8 place-items-center rounded-md border border-gray-200 md:hidden"><IconMenu className="h-4 w-4" /></button>
@@ -218,42 +230,40 @@ function MobileNav({ onClose }: { onClose: () => void }) {
    Problem + Solution + Visual proof in 3 seconds
    ══════════════════════════════════════ */
 function Hero() {
+  const { locale } = useLocale();
   return (
     <section className="relative overflow-hidden">
-      {/* Subtle grid background */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:32px_32px]" />
       <div className="relative mx-auto max-w-5xl px-5 pb-16 pt-14 sm:pt-20 sm:pb-24">
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_420px]">
-          {/* Left: Copy */}
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-[12px] text-gray-500">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
-              47 Grunder scannen gerade live
+              {t("hero.badge", locale)}
             </div>
 
             <h1 className="text-[2.25rem] font-bold leading-[1.08] tracking-[-0.03em] text-black sm:text-[3rem]">
-              Finde heraus, ob deine<br />
-              <span className="text-gray-400">Nische Geld bringt.</span>
+              {t("hero.h1a", locale)}<br />
+              <span className="text-gray-400">{t("hero.h1b", locale)}</span>
             </h1>
 
             <p className="mt-4 max-w-md text-[15px] leading-[1.7] text-gray-500">
-              <strong className="text-black">Kostenloser Nischen-Audit:</strong> Kaching OS scannt echte Google-Daten und zeigt dir in 30 Sekunden Nachfrage, Konkurrenz und Kaufintent — bevor du Zeit und Geld in die falsche Idee steckst.
+              {t("hero.desc", locale)}
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a href="#demo" className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-black px-6 text-[14px] font-semibold text-white transition hover:bg-gray-800">
-                Kostenlosen Audit starten <IconArrowRight className="h-4 w-4" />
+                {t("hero.cta", locale)} <IconArrowRight className="h-4 w-4" />
               </a>
-              <span className="text-[12px] text-gray-400">30 Sek. Kein Abo. Keine Kreditkarte.</span>
+              <span className="text-[12px] text-gray-400">{t("hero.subcta", locale)}</span>
             </div>
 
-            {/* Social proof */}
             <div className="mt-8 flex items-center gap-3">
               <div className="flex -space-x-2">
                 {["SK", "TR", "JM", "MB", "LK"].map(i => <div key={i} className="grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-gray-900 text-[10px] font-bold text-white">{i}</div>)}
               </div>
               <div className="text-[13px] text-gray-500">
-                <span className="font-semibold text-black">2.847+ Grunder</span> nutzen Kaching OS
+                <span className="font-semibold text-black">{t("hero.founders", locale)}</span> {t("hero.social", locale)}
                 <div className="flex gap-0.5 mt-0.5">{[1,2,3,4,5].map(i => <IconStar key={i} className="h-3 w-3 text-amber-400" />)}<span className="ml-1 text-[11px] text-gray-400">4.9/5</span></div>
               </div>
             </div>
@@ -369,23 +379,20 @@ function Ticker() {
 
 /* ── PAIN — Short, punchy ── */
 function PainSection() {
+  const { locale } = useLocale();
+  const pains = [t("pain.1", locale), t("pain.2", locale), t("pain.3", locale), t("pain.4", locale)];
   return (
     <section className="mx-auto max-w-5xl px-5 py-12 sm:py-16">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-red-500">Das Problem</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-red-500">{t("pain.label", locale)}</p>
         <h2 className="mt-2 text-[1.75rem] font-bold leading-[1.15] tracking-[-0.02em] sm:text-[2rem]">
-          90% aller Startups scheitern.<br />Grund #1: Keine Nachfrage.
+          {t("pain.h2a", locale)}<br />{t("pain.h2b", locale)}
         </h2>
-        <p className="mt-3 text-[15px] text-gray-500">Du baust 3 Monate an einer Idee — und niemand kauft. Das passiert, wenn du ratst statt zu messen.</p>
+        <p className="mt-3 text-[15px] text-gray-500">{t("pain.desc", locale)}</p>
       </div>
 
       <div className="mt-8 grid gap-px overflow-hidden rounded-lg border border-gray-200 bg-gray-200 sm:grid-cols-2">
-        {[
-          "Du hast 3 Monate gebaut — und niemand kauft.",
-          "Du weisst nicht, ob deine Nische genug Nachfrage hat.",
-          "Du siehst andere in Wochen launchen und verdienen.",
-          "Du hast Tools, aber kein System das dir sagt WAS."
-        ].map((p, i) => (
+        {pains.map((p, i) => (
           <div key={i} className="flex items-start gap-3 bg-white p-4">
             <span className="mt-0.5 text-[14px] text-red-400">&#x2715;</span>
             <p className="text-[14px] leading-[1.6] text-gray-600">{p}</p>
@@ -398,35 +405,34 @@ function PainSection() {
 
 /* ── COST OF INACTION — translate pain into money ── */
 function CostSection() {
+  const { locale } = useLocale();
   return (
     <section className="border-t border-gray-200/60 bg-black text-white">
       <div className="mx-auto max-w-5xl px-5 py-10 sm:py-14">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-gray-500">Was dich Raten kostet</p>
+          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-gray-500">{t("cost.label", locale)}</p>
           <h2 className="mt-2 text-[1.5rem] font-bold leading-[1.2] tracking-[-0.02em] sm:text-[1.75rem]">
-            Jeder Monat ohne validierte Nische kostet dich:
+            {t("cost.h2", locale)}
           </h2>
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-5 text-center">
-            <p className="text-[32px] font-bold tracking-tight">3 Monate</p>
-            <p className="mt-1 text-[13px] text-gray-400">Bauzeit fur ein Produkt das niemand will</p>
+            <p className="text-[32px] font-bold tracking-tight">{locale === "en" ? "3 months" : "3 Monate"}</p>
+            <p className="mt-1 text-[13px] text-gray-400">{t("cost.time", locale)}</p>
           </div>
           <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-5 text-center">
-            <p className="text-[32px] font-bold tracking-tight">2.000+ EUR</p>
-            <p className="mt-1 text-[13px] text-gray-400">fur Ads, Tools und Domains ohne Return</p>
+            <p className="text-[32px] font-bold tracking-tight">{locale === "en" ? "$2,000+" : "2.000+ EUR"}</p>
+            <p className="mt-1 text-[13px] text-gray-400">{t("cost.money", locale)}</p>
           </div>
           <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-5 text-center">
             <p className="text-[32px] font-bold tracking-tight">100%</p>
-            <p className="mt-1 text-[13px] text-gray-400">Motivation verloren, Projekt aufgegeben</p>
+            <p className="mt-1 text-[13px] text-gray-400">{t("cost.motivation", locale)}</p>
           </div>
         </div>
-        <p className="mt-6 text-center text-[14px] text-gray-400">
-          Ein Nischen-Audit dauert 30 Sekunden. Das falsche Produkt zu bauen dauert Monate.
-        </p>
+        <p className="mt-6 text-center text-[14px] text-gray-400">{t("cost.bottom", locale)}</p>
         <div className="mt-5 text-center">
           <a href="#demo" className="inline-flex h-10 items-center gap-2 rounded-md bg-white px-5 text-[13px] font-semibold text-black transition hover:bg-gray-100">
-            Jetzt kostenlos pruefen <IconArrowRight className="h-3.5 w-3.5" />
+            {t("cost.cta", locale)} <IconArrowRight className="h-3.5 w-3.5" />
           </a>
         </div>
       </div>
@@ -547,6 +553,7 @@ type ScanResult = {
   score: { total: number; demand: number; trend: number; competition: number; intent: number; label: string; demandLabel: string; trendLabel: string; competitionLabel: string; summary: string };
   autocomplete: { suggestions: string[]; count: number; commercialIntent: boolean; intentSignals: string[] };
   trend: { direction: string; currentInterest: number; averageInterest: number; growthPercent: number; timeline: { date: string; value: number }[]; relatedQueries: string[] };
+  platforms?: { amazon: string[]; youtube: string[]; reddit: { title: string; subreddit: string; score: number }[] };
   expandedKeywords: string[];
   scannedAt: string;
 } | null;
@@ -760,6 +767,50 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                     ))}
                     {liveResult.expandedKeywords.length > 12 && <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-400">+{liveResult.expandedKeywords.length - 12} mehr</span>}
                   </div>
+                </div>
+              )}
+
+              {/* Multi-platform data */}
+              {liveResult.platforms && (
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {/* Amazon */}
+                  {liveResult.platforms.amazon.length > 0 && (
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-[11px] font-medium text-gray-400">Amazon Kaufintent</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {liveResult.platforms.amazon.slice(0, 6).map((s, i) => (
+                          <span key={i} className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* YouTube */}
+                  {liveResult.platforms.youtube.length > 0 && (
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-[11px] font-medium text-gray-400">YouTube Nachfrage</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {liveResult.platforms.youtube.slice(0, 6).map((s, i) => (
+                          <span key={i} className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] text-red-700">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reddit */}
+                  {liveResult.platforms.reddit.length > 0 && (
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-[11px] font-medium text-gray-400">Reddit Diskussionen</p>
+                      <div className="mt-1.5 space-y-1">
+                        {liveResult.platforms.reddit.slice(0, 3).map((post, i) => (
+                          <div key={i} className="text-[10px]">
+                            <span className="text-gray-600 line-clamp-1">{post.title}</span>
+                            <span className="ml-1 text-gray-400">r/{post.subreddit} · {post.score} upvotes</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1020,15 +1071,16 @@ function FAQSection() {
 
 /* ── FINAL CTA ── */
 function FinalCTA() {
+  const { locale } = useLocale();
   return (
     <section className="border-t border-gray-200/60">
       <div className="mx-auto max-w-5xl px-5 py-12 sm:py-16">
         <div className="rounded-lg bg-black p-8 sm:p-12">
           <div className="mx-auto max-w-lg text-center">
-            <h2 className="text-[1.75rem] font-bold leading-[1.15] tracking-[-0.02em] text-white sm:text-[2rem]">Dein nachstes Business startet mit einer Nische.</h2>
-            <p className="mt-3 text-[15px] leading-[1.65] text-gray-400">Finde in 30 Sekunden heraus, wo echte Nachfrage wartet.</p>
-            <a href="#demo" className="mt-6 inline-flex h-11 items-center gap-2 rounded-md bg-white px-6 text-[14px] font-semibold text-black transition hover:bg-gray-100">Jetzt Nische scannen <IconArrowRight className="h-4 w-4" /></a>
-            <p className="mt-3 text-[12px] text-gray-500">Kostenlos. Keine Kreditkarte nötig.</p>
+            <h2 className="text-[1.75rem] font-bold leading-[1.15] tracking-[-0.02em] text-white sm:text-[2rem]">{t("cta.h2", locale)}</h2>
+            <p className="mt-3 text-[15px] leading-[1.65] text-gray-400">{t("cta.desc", locale)}</p>
+            <a href="#demo" className="mt-6 inline-flex h-11 items-center gap-2 rounded-md bg-white px-6 text-[14px] font-semibold text-black transition hover:bg-gray-100">{t("cta.button", locale)} <IconArrowRight className="h-4 w-4" /></a>
+            <p className="mt-3 text-[12px] text-gray-500">{t("cta.legal", locale)}</p>
           </div>
         </div>
       </div>
@@ -1056,11 +1108,16 @@ export default function Home() {
   const [nav, setNav] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [locale, setLocale] = useState<Locale>("de");
+
+  // Detect browser language on mount
+  useEffect(() => {
+    setLocale(detectLocale());
+  }, []);
 
   function handleLogin(email: string) {
     setIsLoggedIn(true);
     setUserEmail(email);
-    // Scroll to dashboard after login
     setTimeout(() => {
       document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -1071,23 +1128,25 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      <Header onMenu={() => setNav(true)} isLoggedIn={isLoggedIn} onLogout={handleLogout} />
-      {nav && <MobileNav onClose={() => setNav(false)} />}
-      <Hero />
-      <Ticker />
-      <PainSection />
-      <CostSection />
-      <HowSection />
-      <DashboardSection isLoggedIn={isLoggedIn} onLogin={handleLogin} onLogout={handleLogout} />
-      <UseCasesSection />
-      <TestimonialsSection />
-      <NumbersSection />
-      <PricingSection />
-      <FAQSection />
-      <FinalCTA />
-      <Footer />
-      <LiveToast />
-    </div>
+    <LocaleContext.Provider value={{ locale, setLocale }}>
+      <div className="min-h-screen bg-white text-gray-900">
+        <Header onMenu={() => setNav(true)} isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+        {nav && <MobileNav onClose={() => setNav(false)} />}
+        <Hero />
+        <Ticker />
+        <PainSection />
+        <CostSection />
+        <HowSection />
+        <DashboardSection isLoggedIn={isLoggedIn} onLogin={handleLogin} onLogout={handleLogout} />
+        <UseCasesSection />
+        <TestimonialsSection />
+        <NumbersSection />
+        <PricingSection />
+        <FAQSection />
+        <FinalCTA />
+        <Footer />
+        <LiveToast />
+      </div>
+    </LocaleContext.Provider>
   );
 }

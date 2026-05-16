@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAutocompleteSuggestions, getExpandedSuggestions } from "@/lib/google-autocomplete";
 import { getTrend } from "@/lib/google-trends";
 import { calculateScore } from "@/lib/scoring";
+import { getMultiPlatformData } from "@/lib/multi-autocomplete";
 
 export const runtime = "nodejs";
-export const maxDuration = 30; // Vercel free tier allows 10s, hobby 30s
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,10 +21,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Run all data fetches in parallel
-    const [autocomplete, expandedSuggestions, trend] = await Promise.all([
+    const [autocomplete, expandedSuggestions, trend, platforms] = await Promise.all([
       getAutocompleteSuggestions(keyword),
       getExpandedSuggestions(keyword),
-      getTrend(keyword)
+      getTrend(keyword),
+      getMultiPlatformData(keyword)
     ]);
 
     // Calculate opportunity score
@@ -50,6 +52,11 @@ export async function POST(req: NextRequest) {
         growthPercent: trend.growthPercent,
         timeline: trend.timelineData,
         relatedQueries: trend.relatedQueries
+      },
+      platforms: {
+        amazon: platforms.amazon,
+        youtube: platforms.youtube,
+        reddit: platforms.reddit
       },
       expandedKeywords: expandedSuggestions.slice(0, 20),
       scannedAt: new Date().toISOString()
